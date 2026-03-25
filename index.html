@@ -1,18 +1,9 @@
+
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>
-  <circle cx='16' cy='16' r='16' fill='%230a0a0f'/>
-  <circle cx='8'  cy='12' r='3' fill='%23f59e0b'/>
-  <circle cx='16' cy='12' r='3' fill='%23f59e0b'/>
-  <circle cx='24' cy='12' r='3' fill='%23f59e0b'/>
-  <circle cx='8'  cy='20' r='3' fill='%231a1a2e'/>
-  <circle cx='16' cy='20' r='3' fill='%23f59e0b'/>
-  <circle cx='24' cy='20' r='3' fill='%231a1a2e'/>
-</svg>">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>LED Matrix Pixel Editor</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 <style>
@@ -54,7 +45,7 @@
  
   header {
     border-bottom: 1px solid var(--border);
-    padding: 1.2rem 2rem;
+    padding: 1rem 1.25rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -80,7 +71,13 @@
     letter-spacing: 2px;
   }
  
-  main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+  main { max-width: 1100px; margin: 0 auto; padding: 1.25rem 0.75rem 5rem; }
+ 
+  @media (max-width: 600px) {
+    .logo { font-size: 1rem; letter-spacing: 1px; }
+    .badge { display: none; }
+    main { padding: 1rem 0.5rem 6rem; }
+  }
  
   .section-label {
     font-size: 0.62rem;
@@ -128,6 +125,8 @@
     outline: none;
     cursor: pointer;
     min-width: 120px;
+    -webkit-appearance: none;
+    appearance: none;
   }
  
   .config-group select:focus,
@@ -147,6 +146,7 @@
     padding: 4px 10px;
     align-self: center;
     line-height: 1.7;
+    flex: 1 1 100%;
   }
   .chip-info span { color: var(--accent); }
  
@@ -155,9 +155,16 @@
     background: var(--panel);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 1.25rem 1.25rem 1rem;
+    padding: 1rem 0.75rem 0.75rem;
     margin-bottom: 1.25rem;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: none;
+  }
+ 
+  .grid-inner {
+    display: inline-block;
+    min-width: 100%;
   }
  
   .col-header-row {
@@ -197,6 +204,8 @@
     flex-shrink: 0;
     transition: background 0.07s, box-shadow 0.07s, border-color 0.07s;
     user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
   }
  
   .cell.on {
@@ -219,7 +228,7 @@
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.72rem;
     letter-spacing: 1px;
-    padding: 6px 14px;
+    padding: 8px 14px;
     border-radius: 2px;
     border: 1px solid var(--muted);
     background: transparent;
@@ -227,9 +236,12 @@
     cursor: pointer;
     transition: all 0.1s;
     text-transform: uppercase;
+    min-height: 36px;
+    touch-action: manipulation;
   }
  
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:hover  { border-color: var(--accent); color: var(--accent); }
+  .btn:active { opacity: 0.7; }
   .btn.primary { border-color: var(--accent); color: var(--accent); }
   .btn.primary:hover { background: var(--accent); color: #000; }
   .btn.danger { border-color: var(--accent2); color: var(--accent2); }
@@ -238,6 +250,11 @@
   .btn.success:hover { background: var(--green); color: #000; }
  
   .sep { width: 1px; background: var(--border); align-self: stretch; margin: 0 3px; }
+ 
+  @media (max-width: 600px) {
+    .sep { display: none; }
+    .btn { font-size: 0.68rem; padding: 8px 12px; }
+  }
  
   /* BRIGHTNESS */
   .control-row {
@@ -288,26 +305,33 @@
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.65rem;
     letter-spacing: 2px;
-    padding: 5px 12px;
+    padding: 7px 14px;
     border: 1px solid var(--border);
     background: transparent;
     color: var(--muted);
     cursor: pointer;
     text-transform: uppercase;
     transition: all 0.1s;
+    touch-action: manipulation;
+    min-height: 34px;
   }
  
   .tab:first-child { border-radius: 2px 0 0 2px; }
-  .tab:last-child { border-radius: 0 2px 2px 0; }
+  .tab:last-child  { border-radius: 0 2px 2px 0; }
   .tab.active { background: var(--accent); border-color: var(--accent); color: #000; }
  
   /* CODE OUTPUT */
   .code-block {
-    padding: 1.25rem;
-    font-size: 0.75rem;
+    padding: 1rem;
+    font-size: 0.72rem;
     line-height: 2;
     overflow-x: auto;
     white-space: pre;
+    -webkit-overflow-scrolling: touch;
+  }
+ 
+  @media (max-width: 600px) {
+    .code-block { font-size: 0.62rem; padding: 0.75rem; }
   }
  
   /* syntax colors */
@@ -324,16 +348,22 @@
     bottom: 0; left: 0; right: 0;
     background: var(--panel);
     border-top: 1px solid var(--border);
-    padding: 5px 2rem;
+    padding: 5px 1rem;
     display: flex;
-    gap: 2rem;
+    gap: 1rem;
     font-size: 0.6rem;
     color: var(--muted);
     z-index: 100;
     flex-wrap: wrap;
+    overflow: hidden;
   }
  
   .status-bar span { color: var(--accent); }
+ 
+  @media (max-width: 600px) {
+    .status-bar { gap: 0.6rem; font-size: 0.55rem; }
+    #st-chip, #mouse-pos { display: none; }
+  }
  
   .toast {
     position: fixed;
@@ -390,8 +420,10 @@
   <!-- GRID -->
   <div class="grid-wrap">
     <div class="section-label">// pixel grid — click or drag to draw</div>
-    <div id="col-headers" class="col-header-row"></div>
-    <div id="grid"></div>
+    <div class="grid-inner">
+      <div id="col-headers" class="col-header-row"></div>
+      <div id="grid"></div>
+    </div>
   </div>
  
   <!-- TOOLBAR -->
@@ -970,6 +1002,34 @@ function copyCode() {
 // ============================================================
 document.addEventListener('mousedown', () => isDown = true);
 document.addEventListener('mouseup',   () => isDown = false);
+ 
+// ---- TOUCH SUPPORT ----
+function getCellFromTouch(touch) {
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  if (el && el.classList.contains('cell')) return el;
+  return null;
+}
+ 
+document.addEventListener('touchstart', e => {
+  const cell = getCellFromTouch(e.touches[0]);
+  if (!cell) return;
+  e.preventDefault();
+  const r = +cell.dataset.r, c = +cell.dataset.c;
+  paintVal = pixels[r][c] ? 0 : 1;
+  isDown = true;
+  setPixel(r, c, paintVal);
+}, { passive: false });
+ 
+document.addEventListener('touchmove', e => {
+  if (!isDown) return;
+  const cell = getCellFromTouch(e.touches[0]);
+  if (!cell) return;
+  e.preventDefault();
+  const r = +cell.dataset.r, c = +cell.dataset.c;
+  setPixel(r, c, paintVal);
+}, { passive: false });
+ 
+document.addEventListener('touchend', () => isDown = false);
  
 buildGrid();
 onChipChange();
