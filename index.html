@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>
+  <circle cx='16' cy='16' r='16' fill='%230a0a0f'/>
+  <circle cx='8'  cy='12' r='3' fill='%23f59e0b'/>
+  <circle cx='16' cy='12' r='3' fill='%23f59e0b'/>
+  <circle cx='24' cy='12' r='3' fill='%23f59e0b'/>
+  <circle cx='8'  cy='20' r='3' fill='%231a1a2e'/>
+  <circle cx='16' cy='20' r='3' fill='%23f59e0b'/>
+  <circle cx='24' cy='20' r='3' fill='%231a1a2e'/>
+</svg>">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LED Matrix Pixel Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #0f0f1a;
+    --border: #1a1a2e;
+    --accent: #f59e0b;
+    --accent2: #ef4444;
+    --dim: #2a2a3e;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --led-off: #1a1a2e;
+    --led-on: #f59e0b;
+    --led-glow: rgba(245,158,11,0.6);
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #a78bfa;
+  }
+ 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+ 
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+ 
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.2rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--panel);
+  }
+ 
+  .logo {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 1.3rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+  }
+ 
+  .logo span { color: var(--text); font-weight: 400; }
+  .badge {
+    font-size: 0.65rem;
+    background: var(--dim);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 10px;
+    border-radius: 2px;
+    letter-spacing: 2px;
+  }
+ 
+  main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+ 
+  .section-label {
+    font-size: 0.62rem;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+ 
+  /* CONFIG BAR */
+  .config-bar {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-end;
+  }
+ 
+  .config-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+ 
+  .config-group label {
+    font-size: 0.6rem;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+ 
+  .config-group select,
+  .config-group input[type=number] {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.78rem;
+    background: var(--dim);
+    color: var(--accent);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 6px 10px;
+    outline: none;
+    cursor: pointer;
+    min-width: 120px;
+  }
+ 
+  .config-group select:focus,
+  .config-group input[type=number]:focus {
+    border-color: var(--accent);
+  }
+ 
+  .config-group input[type=number] { width: 80px; min-width: unset; }
+ 
+  /* chip info pill */
+  .chip-info {
+    font-size: 0.6rem;
+    color: var(--muted);
+    background: var(--dim);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 4px 10px;
+    align-self: center;
+    line-height: 1.7;
+  }
+  .chip-info span { color: var(--accent); }
+ 
+  /* GRID */
+  .grid-wrap {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.25rem 1.25rem 1rem;
+    margin-bottom: 1.25rem;
+    overflow-x: auto;
+  }
+ 
+  .col-header-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    gap: 4px;
+  }
+ 
+  .col-idx {
+    text-align: center;
+    font-size: 0.55rem;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+ 
+  .grid-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+  }
+ 
+  .row-idx {
+    text-align: right;
+    font-size: 0.55rem;
+    color: var(--muted);
+    flex-shrink: 0;
+    padding-right: 5px;
+  }
+ 
+  .cell {
+    border-radius: 50%;
+    background: var(--led-off);
+    border: 1.5px solid var(--dim);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.07s, box-shadow 0.07s, border-color 0.07s;
+    user-select: none;
+  }
+ 
+  .cell.on {
+    background: var(--led-on);
+    border-color: var(--accent);
+    box-shadow: 0 0 7px var(--led-glow), 0 0 2px var(--led-glow);
+  }
+ 
+  .cell:hover:not(.on) { border-color: var(--muted); background: var(--dim); }
+ 
+  /* TOOLBAR */
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 1.25rem;
+  }
+ 
+  .btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+    padding: 6px 14px;
+    border-radius: 2px;
+    border: 1px solid var(--muted);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.1s;
+    text-transform: uppercase;
+  }
+ 
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { border-color: var(--accent); color: var(--accent); }
+  .btn.primary:hover { background: var(--accent); color: #000; }
+  .btn.danger { border-color: var(--accent2); color: var(--accent2); }
+  .btn.danger:hover { background: var(--accent2); color: #fff; }
+  .btn.success { border-color: var(--green); color: var(--green); }
+  .btn.success:hover { background: var(--green); color: #000; }
+ 
+  .sep { width: 1px; background: var(--border); align-self: stretch; margin: 0 3px; }
+ 
+  /* BRIGHTNESS */
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+ 
+  .slider-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.7rem 1rem;
+  }
+ 
+  input[type=range] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+ 
+  .slider-val { min-width: 20px; text-align: right; color: var(--accent); font-size: 0.85rem; }
+ 
+  /* OUTPUT */
+  .output-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+ 
+  .output-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--dim);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+ 
+  .output-tabs { display: flex; }
+ 
+  .tab {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.1s;
+  }
+ 
+  .tab:first-child { border-radius: 2px 0 0 2px; }
+  .tab:last-child { border-radius: 0 2px 2px 0; }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #000; }
+ 
+  /* CODE OUTPUT */
+  .code-block {
+    padding: 1.25rem;
+    font-size: 0.75rem;
+    line-height: 2;
+    overflow-x: auto;
+    white-space: pre;
+  }
+ 
+  /* syntax colors */
+  .ck  { color: #93c5fd; }   /* keyword  */
+  .cn  { color: #86efac; }   /* name     */
+  .cv  { color: var(--accent); } /* value    */
+  .cc  { color: var(--muted); }  /* comment  */
+  .cp  { color: #f9a8d4; }   /* preprocessor */
+  .cs  { color: #fde68a; }   /* string   */
+ 
+  /* STATUS */
+  .status-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 5px 2rem;
+    display: flex;
+    gap: 2rem;
+    font-size: 0.6rem;
+    color: var(--muted);
+    z-index: 100;
+    flex-wrap: wrap;
+  }
+ 
+  .status-bar span { color: var(--accent); }
+ 
+  .toast {
+    position: fixed;
+    top: 1.5rem; right: 1.5rem;
+    background: var(--green);
+    color: #000;
+    padding: 9px 18px;
+    border-radius: 2px;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: all 0.18s;
+    pointer-events: none;
+  }
+ 
+  .toast.show { opacity: 1; transform: translateY(0); }
+ 
+  option { background: #1a1a2e; color: var(--text); }
+</style>
+</head>
+<body>
+ 
+<header>
+  <div class="logo">LED<span>matrix</span> <span style="color:var(--muted);font-size:0.85rem;">pixel editor</span></div>
+  <div class="badge">v2.0</div>
+</header>
+ 
+<main>
+ 
+  <!-- CONFIG BAR -->
+  <div class="config-bar">
+    <div class="config-group">
+      <label>chip / driver</label>
+      <select id="chip-select" onchange="onChipChange()">
+        <option value="aip1640">AiP1640 / TM1640</option>
+        <option value="max7219">MAX7219 (SPI)</option>
+        <option value="ht16k33">HT16K33 (I2C)</option>
+        <option value="tm1638">TM1638</option>
+      </select>
+    </div>
+    <div class="config-group">
+      <label>columns</label>
+      <input type="number" id="cfg-cols" value="16" min="1" max="64" onchange="rebuildGrid()">
+    </div>
+    <div class="config-group">
+      <label>rows</label>
+      <input type="number" id="cfg-rows" value="8" min="1" max="32" onchange="rebuildGrid()">
+    </div>
+    <div class="chip-info" id="chip-info"></div>
+  </div>
+ 
+  <!-- GRID -->
+  <div class="grid-wrap">
+    <div class="section-label">// pixel grid — click or drag to draw</div>
+    <div id="col-headers" class="col-header-row"></div>
+    <div id="grid"></div>
+  </div>
+ 
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <button class="btn danger" onclick="clearAll()">clear</button>
+    <button class="btn" onclick="fillAll()">fill all</button>
+    <button class="btn" onclick="invertAll()">invert</button>
+    <button class="btn" onclick="flipH()">flip H</button>
+    <button class="btn" onclick="flipV()">flip V</button>
+    <div class="sep"></div>
+    <button class="btn" onclick="shiftLeft()">shift left</button>
+    <button class="btn" onclick="shiftRight()">shift right</button>
+    <button class="btn" onclick="shiftUp()">shift up</button>
+    <button class="btn" onclick="shiftDown()">shift down</button>
+    <div class="sep"></div>
+    <button class="btn primary success" onclick="copyCode()">copy code</button>
+  </div>
+ 
+  <!-- BRIGHTNESS -->
+  <div class="control-row">
+    <div class="slider-wrap">
+      <div class="section-label" style="margin:0;white-space:nowrap" id="bright-label">// brightness (0-7)</div>
+      <input type="range" min="0" max="15" value="8" id="brightness" oninput="updateBrightness()">
+      <div class="slider-val" id="bright-val">8</div>
+    </div>
+  </div>
+ 
+  <!-- OUTPUT -->
+  <div class="output-panel">
+    <div class="output-header">
+      <div class="section-label" style="margin:0">// arduino code output</div>
+      <div class="output-tabs">
+        <button class="tab active" onclick="setTab('array')"  id="tab-array">ARRAY</button>
+        <button class="tab"        onclick="setTab('sketch')" id="tab-sketch">FULL SKETCH</button>
+      </div>
+    </div>
+    <div class="code-block" id="code-output"></div>
+  </div>
+ 
+</main>
+ 
+<div class="status-bar">
+  <div id="st-chip">chip: <span>AiP1640</span></div>
+  <div id="st-size">size: <span>16x8</span></div>
+  <div id="st-bytes">total bytes: <span>16</span></div>
+  <div id="st-on">pixels on: <span>0</span></div>
+  <div id="mouse-pos">cursor: <span>--</span></div>
+</div>
+ 
+<div class="toast" id="toast">Copied to clipboard!</div>
+ 
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+let ROWS = 8, COLS = 16;
+let pixels = mkPixels();
+let isDown = false, paintVal = 1;
+let currentTab = 'array';
+ 
+// ============================================================
+//  CHIP DEFINITIONS
+// ============================================================
+const CHIPS = {
+  aip1640: {
+    name: 'AiP1640 / TM1640',
+    protocol: 'Serial (bit-bang, 2-wire)',
+    pins: 'DIN + CLK  (any digital pin)',
+    brightRange: [0, 7],
+    brightDefault: 5,
+    brightLabel: '// brightness  0x88 (min) -> 0x8F (max)',
+    note: 'Column-by-column, LSB = row 0 (top)',
+    arrayFormat: 'column',   // one byte per column
+    sketchFn: sketchAip1640,
+  },
+  max7219: {
+    name: 'MAX7219',
+    protocol: 'SPI (hardware or bit-bang)',
+    pins: 'DIN + CLK + CS',
+    brightRange: [0, 15],
+    brightDefault: 8,
+    brightLabel: '// brightness  0 (min) -> 15 (max)',
+    note: 'Row-by-row, MSB = column 0 (left)',
+    arrayFormat: 'row',
+    sketchFn: sketchMax7219,
+  },
+  ht16k33: {
+    name: 'HT16K33',
+    protocol: 'I2C (hardware)',
+    pins: 'SDA (A4) + SCL (A5)',
+    brightRange: [0, 15],
+    brightDefault: 8,
+    brightLabel: '// brightness  0 (min) -> 15 (max)',
+    note: 'Row-by-row via Adafruit LED Backpack lib',
+    arrayFormat: 'row',
+    sketchFn: sketchHt16k33,
+  },
+  tm1638: {
+    name: 'TM1638',
+    protocol: 'Serial (bit-bang, 3-wire)',
+    pins: 'DIO + CLK + STB  (any digital pin)',
+    brightRange: [0, 7],
+    brightDefault: 4,
+    brightLabel: '// brightness  0 (min) -> 7 (max)',
+    note: 'Column-by-column, LSB = row 0 (top)',
+    arrayFormat: 'column',
+    sketchFn: sketchTm1638,
+  },
+};
+ 
+// ============================================================
+//  HELPERS
+// ============================================================
+function mkPixels() {
+  return Array.from({length: ROWS}, () => new Array(COLS).fill(0));
+}
+ 
+function chip() { return CHIPS[document.getElementById('chip-select').value]; }
+ 
+function hex(n, pad=2) { return '0x' + n.toString(16).toUpperCase().padStart(pad,'0'); }
+function bin(n, pad=8) { return '0b' + n.toString(2).padStart(pad,'0'); }
+ 
+function getBytes() {
+  const c = chip();
+  if (c.arrayFormat === 'column') {
+    // one byte per column: bit r = row r
+    return Array.from({length: COLS}, (_, col) => {
+      let v = 0;
+      for (let r = 0; r < ROWS; r++) if (pixels[r][col]) v |= (1 << r);
+      return v;
+    });
+  } else {
+    // one byte per row: bit (COLS-1-c) = column c  (MSB = col 0)
+    return Array.from({length: ROWS}, (_, row) => {
+      let v = 0;
+      for (let c = 0; c < COLS && c < 8; c++) if (pixels[row][c]) v |= (1 << (7 - c));
+      return v;
+    });
+  }
+}
+ 
+// ============================================================
+//  GRID BUILD
+// ============================================================
+function rebuildGrid() {
+  COLS = Math.max(1, Math.min(64, parseInt(document.getElementById('cfg-cols').value) || 16));
+  ROWS = Math.max(1, Math.min(32, parseInt(document.getElementById('cfg-rows').value) || 8));
+  document.getElementById('cfg-cols').value = COLS;
+  document.getElementById('cfg-rows').value = ROWS;
+ 
+  // resize pixels array (preserve existing data)
+  const old = pixels;
+  pixels = Array.from({length: ROWS}, (_, r) =>
+    Array.from({length: COLS}, (_, c) => (old[r] && old[r][c] !== undefined) ? old[r][c] : 0)
+  );
+ 
+  buildGrid();
+  refresh();
+}
+ 
+function buildGrid() {
+  // cell size: shrink when many columns
+  const cellSize = COLS > 24 ? 18 : COLS > 16 ? 22 : 28;
+  const gap = cellSize > 22 ? 4 : 3;
+  const fontSize = cellSize > 22 ? '0.55rem' : '0.45rem';
+  const rowLabelW = 28;
+ 
+  // headers
+  const hdr = document.getElementById('col-headers');
+  hdr.innerHTML = '';
+  hdr.style.paddingLeft = rowLabelW + 'px';
+  hdr.style.gap = gap + 'px';
+ 
+  for (let c = 0; c < COLS; c++) {
+    const d = document.createElement('div');
+    d.className = 'col-idx';
+    d.style.cssText = `width:${cellSize}px;font-size:${fontSize};`;
+    d.textContent = c;
+    hdr.appendChild(d);
+  }
+ 
+  // rows
+  const gridEl = document.getElementById('grid');
+  gridEl.innerHTML = '';
+ 
+  for (let r = 0; r < ROWS; r++) {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'grid-row';
+    rowDiv.style.gap = gap + 'px';
+ 
+    const ri = document.createElement('div');
+    ri.className = 'row-idx';
+    ri.style.cssText = `width:${rowLabelW}px;font-size:${fontSize};`;
+    ri.textContent = r;
+    rowDiv.appendChild(ri);
+ 
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (pixels[r][c] ? ' on' : '');
+      cell.style.cssText = `width:${cellSize}px;height:${cellSize}px;`;
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+ 
+      cell.addEventListener('mousedown', e => {
+        e.preventDefault();
+        paintVal = pixels[r][c] ? 0 : 1;
+        setPixel(r, c, paintVal);
+      });
+      cell.addEventListener('mouseover', () => {
+        document.getElementById('mouse-pos').innerHTML = `cursor: <span>col ${c}, row ${r}</span>`;
+        if (isDown) setPixel(r, c, paintVal);
+      });
+      rowDiv.appendChild(cell);
+    }
+    gridEl.appendChild(rowDiv);
+  }
+}
+ 
+function setPixel(r, c, v) {
+  pixels[r][c] = v;
+  // fast DOM update: find only the matching cell
+  document.querySelectorAll(`.cell[data-r="${r}"][data-c="${c}"]`).forEach(el =>
+    el.classList.toggle('on', v === 1)
+  );
+  refresh();
+}
+ 
+function refreshAllCells() {
+  document.querySelectorAll('.cell').forEach(el =>
+    el.classList.toggle('on', pixels[+el.dataset.r][+el.dataset.c] === 1)
+  );
+  refresh();
+}
+ 
+// ============================================================
+//  CHIP CHANGE
+// ============================================================
+function onChipChange() {
+  const c = chip();
+  // update brightness slider
+  const slider = document.getElementById('brightness');
+  slider.max = c.brightRange[1];
+  slider.value = c.brightDefault;
+  document.getElementById('bright-val').textContent = c.brightDefault;
+  document.getElementById('bright-label').textContent = c.brightLabel;
+  // update chip info
+  document.getElementById('chip-info').innerHTML =
+    `protocol: <span>${c.protocol}</span><br>` +
+    `pins: <span>${c.pins}</span><br>` +
+    `data format: <span>${c.note}</span>`;
+  document.getElementById('st-chip').innerHTML = `chip: <span>${c.name}</span>`;
+  refresh();
+}
+ 
+// ============================================================
+//  REFRESH OUTPUT
+// ============================================================
+function refresh() {
+  const bytes = getBytes();
+  const bright = parseInt(document.getElementById('brightness').value);
+  const c = chip();
+  const totalBytes = bytes.length;
+ 
+  // status bar
+  let on = 0;
+  pixels.forEach(row => row.forEach(v => { if(v) on++; }));
+  document.getElementById('st-size').innerHTML = `size: <span>${COLS}x${ROWS}</span>`;
+  document.getElementById('st-bytes').innerHTML = `total bytes: <span>${totalBytes}</span>`;
+  document.getElementById('st-on').innerHTML = `pixels on: <span>${on} / ${COLS*ROWS}</span>`;
+ 
+  // render code
+  if (currentTab === 'array') {
+    renderArrayOutput(bytes, c);
+  } else {
+    renderSketchOutput(bytes, bright, c);
+  }
+}
+ 
+// ---- ARRAY OUTPUT (annotated) ----
+function renderArrayOutput(bytes, c) {
+  const el = document.getElementById('code-output');
+  el.innerHTML = '';
+ 
+  const isCol = c.arrayFormat === 'column';
+  const count = bytes.length;
+ 
+  // comment header
+  let html = '';
+  html += span('cc', `// ─────────────────────────────────────────────────────\n`);
+  html += span('cc', `// Chip      : ${c.name}\n`);
+  html += span('cc', `// Protocol  : ${c.protocol}\n`);
+  html += span('cc', `// Grid size : ${COLS} columns x ${ROWS} rows\n`);
+  html += span('cc', `// Data fmt  : ${isCol ? 'column-by-column  [byte 0 = col 0 ... byte '+(count-1)+' = col '+(count-1)+']' : 'row-by-row  [byte 0 = row 0 ... byte '+(count-1)+' = row '+(count-1)+']'}\n`);
+  html += span('cc', `// Bit order : ${isCol ? 'bit 0 = top row,  bit '+(ROWS-1)+' = bottom row' : 'bit 7 = left col, bit 0 = right col'}\n`);
+  html += span('cc', `// ─────────────────────────────────────────────────────\n\n`);
+ 
+  html += span('ck', 'unsigned char') + ' ';
+  html += span('cn', 'myPattern') + '[] = {\n\n';
+ 
+  // annotated bytes
+  for (let i = 0; i < count; i++) {
+    const b = bytes[i];
+    const label = isCol ? `col ${i}` : `row ${i}`;
+    // hex + binary + visual
+    const visual = visualRow(b, isCol ? ROWS : Math.min(COLS, 8));
+    html += `  `;
+    html += span('cv', hex(b)) + ',';
+    html += '  ';
+    html += span('cc', `// ${label.padEnd(6)}  ${bin(b).padEnd(10)}  [${visual}]`);
+    html += '\n';
+  }
+ 
+  html += '\n};\n\n';
+  html += span('cc', `// Usage: pass to your display function —\n`);
+  html += span('cc', `// matrix_display(myPattern);\n`);
+ 
+  el.innerHTML = html;
+}
+ 
+function visualRow(byte, len) {
+  let s = '';
+  for (let i = 0; i < len; i++) {
+    s += (byte >> i) & 1 ? '#' : '.';
+  }
+  return s;
+}
+ 
+// ---- FULL SKETCH OUTPUT ----
+function renderSketchOutput(bytes, bright, c) {
+  const el = document.getElementById('code-output');
+  el.innerHTML = c.sketchFn(bytes, bright);
+}
+ 
+function span(cls, txt) {
+  return `<span class="${cls}">${escHtml(txt)}</span>`;
+}
+ 
+function escHtml(s) {
+  s = String(s);
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+ 
+// ============================================================
+//  SKETCH GENERATORS
+// ============================================================
+ 
+function arrayDecl(bytes) {
+  const hex2 = b => hex(b);
+  const lines = [];
+  for (let i = 0; i < bytes.length; i += 8) {
+    lines.push('  ' + bytes.slice(i, i+8).map(hex2).join(', '));
+  }
+  return lines.join(',\n');
+}
+ 
+function sketchAip1640(bytes, bright) {
+  const brightCmd = hex(0x88 | (bright & 7));
+  const arr = arrayDecl(bytes);
+  let h = '';
+  h += span('cc','// ── AiP1640 / TM1640  |  2-wire serial (bit-bang)  ─────────\n');
+  h += span('cc',`// Wiring:  DIN -> SDA_PIN  |  CLK -> CLK_PIN  |  VCC -> 5V\n`);
+  h += span('cc',`// Grid: ${COLS} cols x ${ROWS} rows\n`);
+  h += span('cc','// ─────────────────────────────────────────────────────────────\n\n');
+  h += span('cp','#define') + ' ' + span('cn','CLK_PIN') + '  ' + span('cv','A5') + '\n';
+  h += span('cp','#define') + ' ' + span('cn','SDA_PIN') + '  ' + span('cv','A4') + '\n\n';
+  h += span('ck','unsigned char') + ' ' + span('cn','myPattern') + `[] = {\n${arr}\n};\n\n`;
+  h += span('cc','// ---- Setup ------------------------------------------------\n');
+  h += span('ck','void') + ' ' + span('cn','setup') + '() {\n';
+  h += '  ' + span('cn','pinMode') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','OUTPUT') + ');\n';
+  h += '  ' + span('cn','pinMode') + '(' + span('cn','SDA_PIN') + ', ' + span('cv','OUTPUT') + ');\n';
+  h += '}\n\n';
+  h += span('ck','void') + ' ' + span('cn','loop') + '() {\n';
+  h += '  ' + span('cn','matrix_display') + '(' + span('cn','myPattern') + ');\n';
+  h += '}\n\n';
+  h += span('cc','// ---- Display driver ---------------------------------------\n');
+  h += span('ck','void') + ' ' + span('cn','matrix_display') + '(' + span('ck','unsigned char') + ' data[]) {\n';
+  h += '  ' + span('cn','IIC_start') + '();\n';
+  h += '  ' + span('cn','IIC_send') + '(' + span('cv','0xC0') + ');  ' + span('cc','// start address\n');
+  h += '  ' + span('ck','for') + ' (' + span('ck','int') + ' i = 0; i < ' + span('cv', bytes.length) + '; i++)\n';
+  h += '    ' + span('cn','IIC_send') + '(data[i]);\n';
+  h += '  ' + span('cn','IIC_end') + '();\n';
+  h += '  ' + span('cn','IIC_start') + '();\n';
+  h += '  ' + span('cn','IIC_send') + '(' + span('cv', brightCmd) + ');  ' + span('cc','// display ON + brightness\n');
+  h += '  ' + span('cn','IIC_end') + '();\n';
+  h += '}\n\n';
+  h += span('cc','// ---- Low-level protocol -----------------------------------\n');
+  h += span('ck','void') + ' ' + span('cn','IIC_start') + '() {\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','SDA_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '  ' + span('cn','delayMicroseconds') + '(3);\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','SDA_PIN') + ', ' + span('cv','LOW') + ');\n';
+  h += '  ' + span('cn','delayMicroseconds') + '(3);\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','LOW') + ');\n';
+  h += '}\n';
+  h += span('ck','void') + ' ' + span('cn','IIC_end') + '() {\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','LOW') + ');\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','SDA_PIN') + ', ' + span('cv','LOW') + ');\n';
+  h += '  ' + span('cn','delayMicroseconds') + '(3);\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '  ' + span('cn','delayMicroseconds') + '(3);\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','SDA_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '  ' + span('cn','delayMicroseconds') + '(3);\n';
+  h += '}\n';
+  h += span('ck','void') + ' ' + span('cn','IIC_send') + '(' + span('ck','unsigned char') + ' d) {\n';
+  h += '  ' + span('ck','for') + ' (' + span('ck','byte') + ' mask = 0x01; mask != 0; mask <<= 1) {\n';
+  h += '    ' + span('cn','digitalWrite') + '(' + span('cn','SDA_PIN') + ', (d & mask) ? ' + span('cv','HIGH') + ' : ' + span('cv','LOW') + ');\n';
+  h += '    ' + span('cn','delayMicroseconds') + '(3);\n';
+  h += '    ' + span('cn','digitalWrite') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '    ' + span('cn','delayMicroseconds') + '(3);\n';
+  h += '    ' + span('cn','digitalWrite') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','LOW') + ');\n';
+  h += '  }\n}\n';
+  return h;
+}
+ 
+function sketchMax7219(bytes, bright) {
+  const arr = arrayDecl(bytes);
+  let h = '';
+  h += span('cc','// ── MAX7219  |  SPI (bit-bang)  ──────────────────────────────\n');
+  h += span('cc','// Wiring:  DIN -> DIN_PIN  |  CLK -> CLK_PIN  |  CS -> CS_PIN\n');
+  h += span('cc',`// Grid: ${COLS} cols x ${ROWS} rows  |  brightness 0-15\n`);
+  h += span('cc','// ─────────────────────────────────────────────────────────────\n\n');
+  h += span('cp','#define') + ' ' + span('cn','DIN_PIN') + '  ' + span('cv','11') + '\n';
+  h += span('cp','#define') + ' ' + span('cn','CLK_PIN') + '  ' + span('cv','13') + '\n';
+  h += span('cp','#define') + ' ' + span('cn','CS_PIN')  + '   ' + span('cv','10') + '\n\n';
+  h += span('ck','unsigned char') + ' ' + span('cn','myPattern') + `[] = {\n${arr}\n};\n\n`;
+  h += span('ck','void') + ' ' + span('cn','setup') + '() {\n';
+  h += '  ' + span('cn','pinMode') + '(' + span('cn','DIN_PIN') + ', ' + span('cv','OUTPUT') + ');\n';
+  h += '  ' + span('cn','pinMode') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','OUTPUT') + ');\n';
+  h += '  ' + span('cn','pinMode') + '(' + span('cn','CS_PIN')  + ', ' + span('cv','OUTPUT') + ');\n';
+  h += '  ' + span('cn','max_send') + '(' + span('cv','0x09') + ', ' + span('cv','0x00') + ');  ' + span('cc','// decode mode: none\n');
+  h += '  ' + span('cn','max_send') + '(' + span('cv','0x0A') + ', ' + span('cv',bright) + ');      ' + span('cc','// brightness\n');
+  h += '  ' + span('cn','max_send') + '(' + span('cv','0x0B') + ', ' + span('cv','0x07') + ');  ' + span('cc','// scan limit: all 8 rows\n');
+  h += '  ' + span('cn','max_send') + '(' + span('cv','0x0C') + ', ' + span('cv','0x01') + ');  ' + span('cc','// shutdown: normal operation\n');
+  h += '  ' + span('cn','max_send') + '(' + span('cv','0x0F') + ', ' + span('cv','0x00') + ');  ' + span('cc','// test mode: off\n');
+  h += '}\n\n';
+  h += span('ck','void') + ' ' + span('cn','loop') + '() {\n';
+  h += '  ' + span('ck','for') + ' (' + span('ck','int') + ' i = 0; i < ' + span('cv', bytes.length) + '; i++)\n';
+  h += '    ' + span('cn','max_send') + '(i + 1, ' + span('cn','myPattern') + '[i]);\n';
+  h += '}\n\n';
+  h += span('cc','// ---- MAX7219 register write -------------------------------\n');
+  h += span('ck','void') + ' ' + span('cn','max_send') + '(' + span('ck','byte') + ' reg, ' + span('ck','byte') + ' data) {\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','CS_PIN') + ', ' + span('cv','LOW') + ');\n';
+  h += '  ' + span('cn','shiftOut') + '(' + span('cn','DIN_PIN') + ', ' + span('cn','CLK_PIN') + ', ' + span('cv','MSBFIRST') + ', reg);\n';
+  h += '  ' + span('cn','shiftOut') + '(' + span('cn','DIN_PIN') + ', ' + span('cn','CLK_PIN') + ', ' + span('cv','MSBFIRST') + ', data);\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','CS_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '}\n';
+  return h;
+}
+ 
+function sketchHt16k33(bytes, bright) {
+  const arr = arrayDecl(bytes);
+  let h = '';
+  h += span('cc','// ── HT16K33  |  I2C  ──────────────────────────────────────────\n');
+  h += span('cc','// Requires: Adafruit GFX Library + Adafruit LED Backpack Library\n');
+  h += span('cc','// Wiring:   SDA -> A4  |  SCL -> A5  |  VCC -> 3.3V or 5V\n');
+  h += span('cc',`// Grid: ${COLS} cols x ${ROWS} rows  |  brightness 0-15\n`);
+  h += span('cc','// ─────────────────────────────────────────────────────────────\n\n');
+  h += span('cp','#include') + ' ' + span('cs','<Wire.h>') + '\n';
+  h += span('cp','#include') + ' ' + span('cs','<Adafruit_GFX.h>') + '\n';
+  h += span('cp','#include') + ' ' + span('cs','<Adafruit_LEDBackpack.h>') + '\n\n';
+  h += span('cn','Adafruit_8x16matrix') + ' matrix = ' + span('cn','Adafruit_8x16matrix') + '();\n\n';
+  h += span('ck','static const uint8_t') + ' ' + span('cn','PROGMEM') + ' myPattern[] = {\n' + arr + '\n};\n\n';
+  h += span('ck','void') + ' ' + span('cn','setup') + '() {\n';
+  h += '  matrix.' + span('cn','begin') + '(' + span('cv','0x70') + ');  ' + span('cc','// default I2C address\n');
+  h += '  matrix.' + span('cn','setBrightness') + '(' + span('cv', bright) + ');\n';
+  h += '  matrix.' + span('cn','setTextWrap') + '(' + span('cv','false') + ');\n';
+  h += '}\n\n';
+  h += span('ck','void') + ' ' + span('cn','loop') + '() {\n';
+  h += '  matrix.' + span('cn','clear') + '();\n';
+  h += '  ' + span('ck','for') + ' (' + span('ck','int') + ' r = 0; r < ' + span('cv', bytes.length) + '; r++)\n';
+  h += '    matrix.' + span('cn','drawBitmap') + '(0, r * 8, myPattern + r, ' + span('cv',COLS) + ', ' + span('cv',8) + ', ' + span('cv','LED_ON') + ');\n';
+  h += '  matrix.' + span('cn','writeDisplay') + '();\n';
+  h += '}\n';
+  return h;
+}
+ 
+function sketchTm1638(bytes, bright) {
+  const brightCmd = hex(0x88 | (bright & 7));
+  const arr = arrayDecl(bytes);
+  let h = '';
+  h += span('cc','// ── TM1638  |  3-wire serial (bit-bang)  ────────────────────\n');
+  h += span('cc','// Wiring:  DIO -> DIO_PIN  |  CLK -> CLK_PIN  |  STB -> STB_PIN\n');
+  h += span('cc',`// Grid: ${COLS} cols x ${ROWS} rows\n`);
+  h += span('cc','// ─────────────────────────────────────────────────────────────\n\n');
+  h += span('cp','#define') + ' ' + span('cn','CLK_PIN') + '  ' + span('cv','2') + '\n';
+  h += span('cp','#define') + ' ' + span('cn','DIO_PIN') + '  ' + span('cv','3') + '\n';
+  h += span('cp','#define') + ' ' + span('cn','STB_PIN') + '  ' + span('cv','4') + '\n\n';
+  h += span('ck','unsigned char') + ' ' + span('cn','myPattern') + `[] = {\n${arr}\n};\n\n`;
+  h += span('ck','void') + ' ' + span('cn','setup') + '() {\n';
+  h += '  ' + span('cn','pinMode') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','OUTPUT') + ');\n';
+  h += '  ' + span('cn','pinMode') + '(' + span('cn','DIO_PIN') + ', ' + span('cv','OUTPUT') + ');\n';
+  h += '  ' + span('cn','pinMode') + '(' + span('cn','STB_PIN') + ', ' + span('cv','OUTPUT') + ');\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','STB_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '}\n\n';
+  h += span('ck','void') + ' ' + span('cn','loop') + '() {\n';
+  h += '  ' + span('cn','matrix_display') + '(' + span('cn','myPattern') + ');\n';
+  h += '}\n\n';
+  h += span('cc','// ---- Display driver ---------------------------------------\n');
+  h += span('ck','void') + ' ' + span('cn','matrix_display') + '(' + span('ck','unsigned char') + ' data[]) {\n';
+  h += '  ' + span('cn','tm_send_cmd') + '(' + span('cv','0x40') + ');  ' + span('cc','// write mode\n');
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','STB_PIN') + ', ' + span('cv','LOW') + ');\n';
+  h += '  ' + span('cn','tm_write_byte') + '(' + span('cv','0xC0') + ');  ' + span('cc','// start address\n');
+  h += '  ' + span('ck','for') + ' (' + span('ck','int') + ' i = 0; i < ' + span('cv', bytes.length) + '; i++)\n';
+  h += '    ' + span('cn','tm_write_byte') + '(data[i]);\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','STB_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '  ' + span('cn','tm_send_cmd') + '(' + span('cv', brightCmd) + ');  ' + span('cc','// display ON + brightness\n');
+  h += '}\n\n';
+  h += span('ck','void') + ' ' + span('cn','tm_send_cmd') + '(' + span('ck','byte') + ' cmd) {\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','STB_PIN') + ', ' + span('cv','LOW') + ');\n';
+  h += '  ' + span('cn','tm_write_byte') + '(cmd);\n';
+  h += '  ' + span('cn','digitalWrite') + '(' + span('cn','STB_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '}\n';
+  h += span('ck','void') + ' ' + span('cn','tm_write_byte') + '(' + span('ck','byte') + ' d) {\n';
+  h += '  ' + span('ck','for') + ' (' + span('ck','int') + ' i = 0; i < 8; i++) {\n';
+  h += '    ' + span('cn','digitalWrite') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','LOW') + ');\n';
+  h += '    ' + span('cn','digitalWrite') + '(' + span('cn','DIO_PIN') + ', (d >> i) & 1 ? ' + span('cv','HIGH') + ' : ' + span('cv','LOW') + ');\n';
+  h += '    ' + span('cn','digitalWrite') + '(' + span('cn','CLK_PIN') + ', ' + span('cv','HIGH') + ');\n';
+  h += '  }\n}\n';
+  return h;
+}
+ 
+// ============================================================
+//  TOOLS
+// ============================================================
+function clearAll()  { pixels = mkPixels(); refreshAllCells(); }
+function fillAll()   { pixels = Array.from({length:ROWS}, () => new Array(COLS).fill(1)); refreshAllCells(); }
+function invertAll() { pixels = pixels.map(r => r.map(v => v^1)); refreshAllCells(); }
+function flipH()     { pixels = pixels.map(r => [...r].reverse()); refreshAllCells(); }
+function flipV()     { pixels = [...pixels].reverse(); refreshAllCells(); }
+ 
+function shiftLeft() {
+  pixels = pixels.map(r => { const a=[...r]; a.push(a.shift()); return a; });
+  refreshAllCells();
+}
+function shiftRight() {
+  pixels = pixels.map(r => { const a=[...r]; a.unshift(a.pop()); return a; });
+  refreshAllCells();
+}
+function shiftUp() {
+  const first = pixels.shift();
+  pixels.push(first);
+  refreshAllCells();
+}
+function shiftDown() {
+  const last = pixels.pop();
+  pixels.unshift(last);
+  refreshAllCells();
+}
+ 
+// ============================================================
+//  TABS / BRIGHTNESS / COPY
+// ============================================================
+function setTab(t) {
+  currentTab = t;
+  document.getElementById('tab-array').classList.toggle('active', t === 'array');
+  document.getElementById('tab-sketch').classList.toggle('active', t === 'sketch');
+  refresh();
+}
+ 
+function updateBrightness() {
+  document.getElementById('bright-val').textContent = document.getElementById('brightness').value;
+  refresh();
+}
+ 
+function copyCode() {
+  const el = document.getElementById('code-output');
+  navigator.clipboard.writeText(el.innerText).then(() => {
+    const t = document.getElementById('toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1800);
+  });
+}
+ 
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('mousedown', () => isDown = true);
+document.addEventListener('mouseup',   () => isDown = false);
+ 
+buildGrid();
+onChipChange();
+</script>
+</body>
+</html>
